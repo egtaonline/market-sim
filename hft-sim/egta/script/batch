@@ -1,0 +1,17 @@
+#!/bin/bash
+if [ $# -ne 2 ]; then
+   echo "Usage: $0 [simulation folder] [number of samples to gather]"
+   exit 1
+fi
+
+module load java
+
+FILES=lib/*.jar
+CLASSPATH="$CLASSPATH:hft.jar"
+for i in $FILES; do
+    CLASSPATH="${CLASSPATH}:${i}"
+done
+
+for (( I=0; I<$2; ++I )); do
+    java -Xms128M -Xmx2G -cp ${CLASSPATH} systemmanager.SystemManager $1 $I
+done

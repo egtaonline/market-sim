@@ -1,0 +1,203 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.2in]{geometry}
+\usepackage{color,soul,hyperref,url}
+\usepackage{graphicx,amstext}
+\usepackage{subfigure}
+\usepackage{amsmath}
+\usepackage{enumerate}
+\usepackage{listings}
+\usepackage{paralist}
+\usepackage{natbib}
+
+\lstset{
+  basicstyle=\ttfamily,
+  breaklines=true
+}
+
+\begin{document}
+	
+\title{EGTA}
+\author{
+  Elaine Wah \\
+  \href{mailto:ewah@umich.edu}{ewah@umich.edu}
+}
+\date{Updated: \today}
+\maketitle
+
+\section{Introduction}
+
+The methodology of \emph{empirical game theoretic analysis} (EGTA) \citep{Wellman2006} facilitates strategy selection for traders by comparing the payoffs (total surplus) of different combinations of traders and strategy assignments. EGTA is an iterative process to guide exploration of the strategy space, in which the goal is to confirm or refute equilibrium candidates.
+
+We focus on \emph{role-symmetric games}, in which agents' strategy sets are symmetric within a role, but may differ across roles.
+Payoffs in a role-symmetric game depends solely on role membership, strategy, and the number of agents playing the strategy. This permits us to exploit symmetry in certain types of agents in order to achieve a more compact game model.
+
+To conduct and manage experiments, we use the \href{http://egtaonline.eecs.umich.edu}{EGTAOnline} simulation manager, which allows us to generate simulation data for a variety of strategy profiles \citep{Cassell2013}.
+The testbed runs on the CAEN cluster flux. You can request access to flux by filling out this \href{https://docs.google.com/a/umich.edu/forms/d/1u9hdqdinnNC9iF6If2xV0C06knbP_TKJBIzfCSnWw6I/viewform}{form}.
+The process of uploading a version of the simulation system and scheduling simulations is described in Section \ref{sec:egta}.
+Game analysis is described in Section \ref{sec:analysis}.
+
+\section{EGTAOnline}\label{sec:egta}
+
+For more advanced users, many of the steps described below can be set up programmatically through the testbed's \href{https://github.com/bcassell/egtaonline3/wiki/API}{HTTP API}.
+
+\subsection{Ready the simulator}
+To create and upload the simulator to the testbed, make sure you are in the \path{hft-sim} directory, then execute the following command:
+\begin{verbatim}
+./create-egta-simulator.sh [simulator name] [defaults.json]
+\end{verbatim}
+For example, 
+\begin{verbatim}
+./create-egta-simulator.sh market_maker_sim marketmaker.json
+\end{verbatim}
+will create a zipped folder \path{market_maker_sim.zip} with \path{marketmaker.json} saved as the required \path{defaults.json} file. 
+
+The \path{defaults.json} argument is optional; when not specified, the script will use \path{docs/defaults.json}. Otherwise, it will copy the specified file, which should indicate the simulator's default configurations (i.e., values in the simulation spec file).
+Format-wise, it looks exactly like the \path{simulation_spec.json} with the ``assignment'' section removed.
+
+Note that the zipped simulator file will also copy the configuration specified in the \path{egta} directory as well as the necessary \path{batch} script for running simulations on the cluster.
+To \href{http://egtaonline.eecs.umich.edu/simulators/new}{create a new simulator}, the following fields must be completed:
+\begin{description}
+\item[\texttt{Name}:] Simulator name, e.g. \path{market_maker_sim}
+\item[\texttt{Version}:] Simulator version, e.g. \verb|2.0|
+\item[\texttt{Email}:] Your email
+\item[\texttt{Zipped Source}:] Select the zipped file you've just created. The name of the zip file should match the simulator name, i.e. you should be selecting \path{market_maker_sim.zip}
+\end{description}
+It is possible to upload a new zip file to replace the existing simulator without changing the name or version number, but it is of utmost importance than in such circumstances you do not change the strategies in a way that would invalidate data already collected.
+
+After uploading the simulator, add the roles and corresponding strategies. These specify what roles and strategies will be available in the schedulers based on your simulator.
+
+\subsection{Create a scheduler}
+
+Schedulers are responsible for determining the profiles you need, given available strategies specified for each role, and acquiring the number of observations requested.
+A \emph{profile} is an assignment of strategies to each player in a game.\footnote{For example, in the game of rock-paper-scissors, one profile may be represented as $(R,P)$; this specifies the profile in which the first player plays `Rock' and the second plays `Paper'}
+
+As it is computational infeasible to analyze games with even 50+ traders, given the exponential growth in game size with the number of players, we employ \emph{deviation-preserving reduction} or DPR \citep{Wiedenbeck2012}.
+Generally, player reduction is an aggregation technique that enables the approximation of games with many players via smaller games.
+
+Other types of player reduction exist but for most purposes, the HFT project will require creating DPR or DPR deviation schedulers.
+Setting up the configurations is the same; the two types of schedulers differ primarily in how strategies are set up.
+To \href{http://egtaonline.eecs.umich.edu/dpr_schedulers/new}{create a new DPR scheduler}, the following fields need to be completed:
+\begin{description}
+\item[\texttt{Name}:] Scheduler name (you will have many schedulers, so a naming system that includes short descriptors for the simulator, environment, and some numbering is recommended)
+\item[\texttt{Size}:] Number of agents (across all roles) in this scheduler. This is the number of players in the \emph{full} game, not the reduced game
+\item[\texttt{Default observation requirement}:] Number of observations the scheduler will obtain for each profile; minimum of 100 is recommended, but more is generally better
+\item[\texttt{Observations per simulation}:] Recommended value of 25
+\item[\texttt{Process memory}:] Recommended values of 3600 to 4000
+\item[\texttt{Time per observation (in seconds)}:] Depends on the strategies you plan to include, but note that flux will oftentimes be much slower than your own machine; for the purposes of the market maker simulations, for example, 500 is sufficient
+\item[\texttt{Nodes required}:] For the HFT simulation system, 1 is sufficient
+\item[\texttt{Active}:] Check box to activate the scheduler (and start running simulations). Leave this box unchecked for now.
+Do not activate the scheduler until you have set up all strategies and roles.
+\item[\texttt{Simulator}:] Drop-down to select simulator and version
+\end{description}
+The fields following \texttt{Simulator} will automatically update with the fields specified in \path{defaults.json}. If using non-default values, be very careful to avoid typos; otherwise, your simulation data will not be stored correctly.
+After you set up the scheduler's strategies (see below), edit the simulator and check the \texttt{Active} box to start scheduling simulations.
+
+\begin{paragraph}{DPR scheduler}
+After creating a scheduler, you will need to specify the roles, strategies, and number of agents. Select the role from the drop-down. The next two text boxes on the right allow you to specify the number of players in this role in the full game (``Count''), then the number of players in this role in the reduced game (``Reduced Count''). 
+
+Once you've added a role, you can select the strategies to include in this scheduler. The scheduler will determine what profiles are needed based on the strategies selected for each role.
+The number of profiles needed grows exponentially with the number of strategies, so a general rule for the simulation system is to avoid including more than 3 trading strategies in any role with more than 1 player.
+\end{paragraph}
+
+\begin{paragraph}{DPR deviation scheduler}
+The purpose of the \href{http://egtaonline.eecs.umich.edu/dpr_deviation_schedulers/new}{DPR deviation scheduler} is to sample profiles that are single-player deviations from a candidate equilibrium.
+The \emph{Roles and Strategies} section is set up similar to the DPR scheduler as described above, but be sure to specify only strategies from a candidate equilibrium. For example, if a candidate equilibrium (as determined from the analysis script) involves all background traders playing \verb|ZIR:bidRangeMin_0_bidRangeMax_1000| and the market maker playing \verb|MAMM:numRungs_200|, pick only those strategies in this section, even if other strategies are present in the maximal subgame found.
+The \emph{Deviating Roles and Strategies} section indicates the deviating strategies you would like to sample. For most purposes, you will need to include \emph{every} available strategy (for each role) in this list, even if those strategies are not present in the maximal subgame.
+\end{paragraph}
+
+
+\subsection{Monitoring simulations}
+You can monitor your individual schedulers to see how many observations are still needed. The bottom of each scheduler's page will have a section called \emph{Profiles} which indicates the strategy profiles that are combinations of the allowed strategy sets for each role. The ``Requested Observations'' column will match the \texttt{Default observation requirement}, and ``Observation Count'' indicates the number of observations you've collected so far for a given profile. You can click on the column header to sort.
+
+Monitoring your experiments from the \href{http://egtaonline.eecs.umich.edu/simulations}{Simulations} page is also necessary to ensure that your simulations are running as expected.
+There are a number of possible states you might see; if you see ``failed'' for any of your profiles, click the state to determine what the error message is. If you see an error message with ``Java,'' this indicates that there is most likely an error within the simulation system.
+
+\subsection{Constructing a game}
+
+You can construct a game directly from a scheduler's page (click ``Create Game to Match''). This will take you directly to the game's page, from which you can add the strategies you'd like to include in this game.
+Multiple games can be constructed from the same data.
+For example, to examine the welfare effects of market making, we can construct two games---both with BACKGROUND and MARKETMAKER roles---in which the game without market making included only one strategy for market makers (the no-trade strategy NOOP), while the game with market making included all non-NOOP market maker strategies.
+
+
+\section{Game Analysis}\label{sec:analysis}
+
+In EGTA, a profile is confirmed when all possible deviations have been examined, and no beneficial deviation exists.
+As the observed payoffs from our simulator for a given profile are incrementally added, we analyze each successive intermediate game model and continue to refine the empirical game with the estimated payoffs until all candidate Nash equilibria are refuted or confirmed.
+
+We look at \emph{regret} in the analysis script output to determine when a candidate equilibrium has been confirmed. Regret of a profile is the maximum amount of additional payoff that any player can gain from switching to a different strategy.
+
+The game analysis scripts are maintained by \href{mailto:btwied@umich.edu}{Bryce Wiedenbeck}. To clone the repository for game analysis, navigate to the directory which holds the simulation system repository (e.g., \path{hft_project}), then execute the following command:
+\begin{verbatim}
+git clone https://github.com/egtaonline/GameAnalysis.git
+\end{verbatim}
+This should clone the GameAnalysis repository at the same level as the hft repo.
+Be sure to pull periodically to ensure that the game analysis code is up to date.
+
+To reduce the game and then analyze it:
+\begin{enumerate}
+\item First create a directory \path{games} in \path{hft_project}:
+\begin{verbatim}
+mkdir games
+\end{verbatim}
+\item Download your relevant game file: Click ``Download JSON'' from the specific game's page and move the resulting file (file name format will be \path{#-summary.json}) to a new folder in \path{games}. For example, if I download the summary of game 178 from the Games page, I move the resulting \path{178-summary.json} file from my default \path{Downloads} directory to \path{games/mmgame}. 
+\item Reduce the game to $N_1$, ..., $N_r$, where $N_i$ indicates the number of players in the $i$-th role (when roles are sorted in alphabetical order). From the \path{hft_project} directory, use the following command to generate the reduced game:
+\begin{verbatim}
+./GameAnalysis/Reductions.py -input [summary game file] -output [reduced game file] 
+    DPR [N_1] [N_2] ... [N_r]
+\end{verbatim}
+For example, if I have two roles, BACKGROUND and MARKETMAKER, and I would like to generate a reduced game with 6 of the former and 1 of the latter, I execute the following command:
+\begin{verbatim}
+./GameAnalysis/Reductions.py -input games/mmgame/178-summary.json -output 
+    games/mmgame/178-reduced.json DPR 6 1
+\end{verbatim}
+
+\item Copy the game analysis script from the \path{GameAnalysis/scripts} directory to the \path{GameAnalysis} directory with the command:
+\begin{verbatim}
+cp GameAnalysis/scripts/AnalysisScript.py GameAnalysis/
+\end{verbatim}
+The game analysis script can then be executed as:
+\begin{verbatim}
+./GameAnalysis/AnalysisScript.py [arguments] [reduced game file]
+\end{verbatim}
+For example,
+\begin{verbatim}
+./GameAnalysis/AnalysisScript.py -r 1 games/mmgame/178-reduced-json
+\end{verbatim}
+Add \verb|> [output file name]| to the end of the command to pipe the output into a separate text file, such as:
+\begin{verbatim}
+./GameAnalysis/AnalysisScript.py -r 1 games/mmgame/178-reduced-json
+    > games/mmgame/analysis_output.txt
+\end{verbatim}
+\end{enumerate}
+
+When analyzing your game, if 0 approximate mixed strategy Nash equilibria are found, try ramping up regret (e.g., use arguments \verb|-r 1| or \verb|-r 1000|) first.
+Another option is to change the convergence threshold to something smaller (e.g., \verb|-c 1e-10| or \verb|-c 1e-12|). You may have to try a variety of parameters before candidate equilibria are found.
+
+More profiles are needed whenever you observe either of the following scenarios within the output of the analysis script:
+\begin{description}
+\item[\texttt{Deviation subgame UNEXPLORED!}:] This indicates that a subgame needs to be explored.
+For example, given the following output for a subgame:
+\begin{verbatim}
+BACKGROUND:
+    ZIR:bidRangeMin_0_bidRangeMax_5000: 100.0%
+MARKETMAKER:
+    NOOP: 100.0%
+best responses:
+        BACKGROUND: ZIR:bidRangeMin_0_bidRangeMax_1000;   gain = 16432.0212
+Deviation subgame UNEXPLORED!
+\end{verbatim}
+you will need to set up a DPR scheduler with two BACKGROUND strategies, \\
+\verb|ZIR:bidRangeMin_0_bidRangeMax_5000| and \verb|ZIR:bidRangeMin_0_bidRangeMax_1000|, as well as the MARKETMAKER strategy \verb|NOOP|.
+
+\item[\texttt{regret >= $\epsilon$}:] A candidate equilibrium still needs to be confirmed or refuted it is lower bounded by some small $\epsilon$ close to 0, instead of \verb|regret = 0.0| or \verb|regret = |$\epsilon$.  In such cases, you will need to set up a DPR deviation scheduler with the candidate equilibrium in the \emph{Roles and Strategies} section and with all other strategies available in that game in the \emph{Deviating Roles and Strategies} section.
+For instance, \verb|regret >= 0.0023| means the candidate equilibrium is unconfirmed, but \verb|regret = 0.0023| means that it has been confirmed (even though it's not exactly 0).
+
+\end{description}
+You can verify to some degree that your new scheduler has been set up correctly by sorting by the number of observations (``Observation Count''). You should see at least one profile with 0 observations (indicating that you need to collect data for this profile).
+
+After you've set up any new schedulers as needed and have collected data for additional profiles, repeat this entire procedure (starting with downloading the game) and repeat until the game has reached quiescence and all equilibrium candidates have been either confirmed or refuted.
+
+\bibliographystyle{plain}
+\bibliography{docs}
+
+\end{document}

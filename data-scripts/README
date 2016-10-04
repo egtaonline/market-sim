@@ -1,0 +1,9 @@
+README
+October 28, 2013
+ewah
+
+This repository is for scripts for parsing/analyzing millisecond-level data.
+
+The shared data folder has limited write access, so you will need to clone
+it outside the /home/share/data (data) folder.
+

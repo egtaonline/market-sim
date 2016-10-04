@@ -1,0 +1,30 @@
+digraph G {
+	label="Activity Flow Chart"
+	fontsize=20
+	labelloc=t
+	splines=false
+
+	"Agent Arrival" -> "Agent Reentry" [style=dotted]
+	"Agent Arrival" -> "Agent Strategy"
+	"Agent Reentry" -> "Agent Strategy"
+
+	"Agent Strategy" -> "Submit (NMS) Bid" [style=dotted]
+	"Agent Strategy" -> "Withdraw Bid" [style=dotted]
+	
+	"Submit (NMS) Bid" -> Clear [label=" CDA"]
+	"Withdraw Bid" -> Clear [label=" CDA"]
+	Clear -> Clear [constraint=false, label=" Call"]
+	
+	Clear -> "Send To IP"
+	Clear -> ell1 [style=invis]
+	Clear -> "LAIP: Send To IP"
+
+	ell1 [label="...", penwidth=0]
+	ell2 [label="...", penwidth=0]
+	
+	"Send To IP" -> "Process Quote" [weight=2]
+	ell1 -> ell2 [style=invis, weight=2]
+	"LAIP: Send To IP" -> "LAIP: Process Quote" [weight=2]
+
+	"LAIP: Process Quote" -> "Agent Strategy" [style=dotted, constraint=false]
+}

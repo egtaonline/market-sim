@@ -1,0 +1,23 @@
+#!/bin/bash
+if [ $# -ne 4 ]; then
+echo "Usage: ./$(basename $0) [game num] [no-mm dir] [mm dir] [output csv]"
+exit 1
+fi
+
+num=$1
+
+mm="${3%/}/$1-summary.json"
+no_mm="${2%/}/$1-summary.json"
+
+basedir=.
+
+FILES=$basedir/lib/*.jar
+CLASSPATH=.:$basedir/dist/cv.jar
+for i in $FILES
+do
+  CLASSPATH=${CLASSPATH}:${i}
+done
+
+echo ">> Parsing into CSV..."
+java -cp ${CLASSPATH} parser.ObsToCSV $no_mm $mm ${4%.csv}.csv
+

@@ -1,0 +1,13 @@
+{
+    "configuration": {
+	"numSims": "100",
+        "simLength": "12000",
+        "backgroundReentryRate": "0.005",
+	"marketmakerReentryRate": "0.005",
+        "meanValue": "100000",
+        "kappa": "0.05",
+        "shockVar": "5E5",
+        "privateValueVar": "5E6",
+        "CDA": "num_1"
+    }
+}

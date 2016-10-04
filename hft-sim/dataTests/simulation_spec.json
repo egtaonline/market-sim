@@ -1,0 +1,30 @@
+{
+    "assignment": {
+    },
+    "configuration": {
+        "randomSeed": "271828",
+        "numSims": "1",
+        "simLength": "60000",
+        "presets": "NONE",
+        "tickSize": "1",
+        "nbboLatency": "1000",
+        "mktLatency": "-1",
+        "arrivalRate": "0.075",
+        "reentryRate": "0.0005",
+        "meanValue": "100000",
+        "kappa": "0.05",
+        "shockVar": "1E8",
+        "privateValueVar": "1E8",
+        "CDA": "num_1",
+        "CALL": "num_0",
+        "LA": "num_0",
+        "BASICMM": "num_0_numRungs_10_rungSize_1000",
+	"MAMM": "num_0",
+	"WMAMM": "num_0",
+        "ZI": "num_0_bidRangeMin_0_bidRangeMax_5000",
+        "ZIR": "num_61_maxqty_10",
+        "ZIP": "num_0",
+        "AA": "num_0",
+				"MARKETDATA":"num_1_fileName_dataTests/nyseTest.csv"
+    }
+}

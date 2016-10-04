@@ -1,0 +1,55 @@
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyc
+hft.jar
+
+# Logs #
+########
+*.log
+
+# Documentation #
+#################
+.synctex.gz
+*.out
+*.aux
+*.bbl
+*.blg
+*.toc
+
+# Other #
+#########
+*.swp
+.classpath
+.metadata
+.project
+.settings
+.DS_Store
+
+# Directories #
+###############
+build/*
+simulations/*
+logs/*
+.settings/*
+
+# OSX Setting #
+###############
+.DS_Store
+
+# Emacs #
+#########
+*~
+
+# Project Specific #
+####################
+# For custom defaults on root directory
+/defaults.json
+# For simulators on root directory
+/*.zip
+/bin

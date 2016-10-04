@@ -1,0 +1,223 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.2in]{geometry}
+\usepackage{color,soul,hyperref,url}
+\usepackage{graphicx,amstext}
+\usepackage{subfigure}
+\usepackage{amsmath}
+\usepackage{enumerate}
+\usepackage{listings}
+\usepackage{paralist}
+\usepackage{array}
+
+\lstset{
+  basicstyle=\ttfamily,
+  breaklines=true
+}
+
+
+\begin{document}
+	
+\title{Simulation Spec File}
+\author{
+  Erik Brinkman \\
+  \href{mailto:erik.brinkman@umich.edu}{erik.brinkman@umich.edu}
+  \and
+  Elaine Wah \\
+  \href{mailto:ewah@umich.edu}{ewah@umich.edu}
+}
+\date{Updated: \today}
+\maketitle
+
+\section{Introduction}
+
+The simulation spec file contains the entire configuration of a simulation. It
+is in \href{https://en.wikipedia.org/wiki/Json}{JSON} format and divided into
+two main sections: ``assignment,'' and ``configuration.''
+
+The parameters in the specification file are those that can be adjusted in
+simulations. Below is the example \path{simulation_spec.json} file found in
+the \path{docs} folder:
+
+\lstinputlisting{../simulation_spec.json}
+
+\section{Assignment}
+
+The ``assignment'' section is primarily for use with EGTA. It contains a
+nested listing of player roles with strategies assigned to players. 
+%
+There are currently three agent roles:
+ \begin{description}
+  \item[\texttt{BACKGROUND}:] Background traders, who possess a private valuation for the security.
+  \item[\texttt{MARKETMAKER}:] Marker makers, who do not have private values.
+  \item[\texttt{HFT}:] High-frequency traders.
+  \end{description}
+
+Each role used in the simulation is followed by a list of agent-strategy pairs, which take the format \texttt{<agentType>:<key>\_<value1>\_<key>\_<value2>...}. Each agent present in the simulation is specified on its own line.
+%
+For example, the section below specifies two background traders, one with range $[0, 5000]$ and one with range $[0, 1000]$, and a single market maker employing the \textsc{BasicMM} strategy with 100 rungs:
+%
+\begin{verbatim}
+{
+    "assignment": {
+        "BACKGROUND": [
+            "ZIR:Rmin_0_Rmax_1000",
+            "ZIR:Rmin_0_Rmax_5000"
+        ],
+        "MARKETMAKER": [
+            "BASICMM:K_100"
+        ]
+    }
+    ...
+}
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Configuration}
+
+\begin{table}
+\centering
+\begin{tabular}[f]{p{0.3\textwidth} c p{0.55\textwidth}}
+\uppercase{Name}   & \uppercase{Default} & \uppercase{Description} \\ \hline
+
+\verb|numSims| 		& 1 & Number of simulations to pre-aggregate; e.g., setting this parameter to 5 will generate observation files containing mean values from 5 simulation runs. \\
+\verb|randomSeed| 	& system time & Seed for the pseudorandom number generator. Random number generation is linked to the observation number, therefore a sequence of observations 0 to N will have different random numbers even when run with the same simulation spec file (and the same seed). Entering the same random seed for different models allows comparison with simulations run with common random numbers. \\
+\verb|modelName| 	& \emph{(undefined)} &  Name of market model. Only used in the output file when merging observations, as the model name will be prepended to all observation metrics in the final merged observation file.\\
+  
+\verb|presets|  		& \emph{(undefined)} & Examples: \verb|CENTRALCDA|, \verb|TWOMARKET|. \\
+
+\verb|simLength| 	& 60000 & Length of simulation in time ticks (usually interpreted as milliseconds). \\ 
+
+\verb|nbboLatency| 	& -1 & Latency to update both the NBBO quote through the SIP in time steps (usually interpreted in milliseconds).\\
+\verb|mktLatency| 	& -1 & Quote \& transaction update latency for all markets. \\
+\verb|laLatency| 	& -1 & Latency of the latency arbitrageur \\
+
+\verb|arrivalRate| 	& 0.075 & Rate for the Poisson process of agent arrival times (background traders only; market makers and HFTs arrive at time 0). \\
+\verb|reentryRate| 	& 0.005 & Rate of reentry for all agents. Can also be set for an agent individually, if part of its strategy.\\
+\verb|backgroundReentryRate| & \verb|reentryRate| & Used by background agent if in agent constructor \\
+\verb|marketmakerReentryRate| & \verb|reentryRate| & Used by market maker if in agent constructor \\
+
+\verb|tickSize| 		& 1 & Prices are integers, so the smallest tick size is $1$. \\
+\verb|marketTickSize| & \verb|tickSize|& \\
+\verb|agentTickSize| & \verb|tickSize|& \\
+
+\verb|maxPosition| 	& 10 & Max position (long or short) for background agents. \\
+\verb|privateValueVar| & 1E6 & Variance of normally distributed i.i.d. elements of private value array; only applicable to background agents. \\
+\verb|meanValue| 	& 100000 & Mean for the public global fundamental value.\\
+\verb|kappa| 		& 0.05 & Mean-reversion parameter for the fundamental; higher kappa indicates greater degree of mean-reversion.\\
+\verb|shockVar| 		& 1E6 & Variance of shock to global fundamental (which is normally distributed around mean 0).\\
+
+
+
+\end{tabular}
+\caption{List of environment configuration parameters.}
+\label{tab:configs}
+\end{table}
+
+The ``configuration'' section specifies the parameters for the market environment as well as the agent population present.
+%
+An explanation of select parameters follows (also see Table \ref{tab:configs}):
+
+\begin{description}
+
+\item[\texttt{presets}:] This is a way to get easy access to ``standard'' market
+  configurations. Currently there are four options:
+  \begin{description}
+  \item[\texttt{CENTRALCDA}:] A single CDA Market.
+  \item[\texttt{CENTRALCALL}:] A single CALL Market that clears at the \texttt{nbboLatency}.
+  \item[\texttt{TWOMARKET}:] Two CDA markets and no latency arbitrageur.
+  \item[\texttt{TWOMARKETLA}:] Two CDA markets and a single latency arbitrageur.
+  \item[\texttt{MAXEFF}:] One call market, 66 background agents with max position 10.
+  \end{description}
+  
+  %%%%%%%%%%%
+\item[Markets:] The next set of options allow manually specifying market configurations
+  if a preset is not used. Currently, there are two types of markets: \texttt{CDA} and \texttt{CALL}. The configuration string takes the format
+  \texttt{<key1>\_<value1>\_<key>\_<value2>\_...}, and can contain several comma-separated configurations. The following entry would create three CALL
+  markets. Two of these will clear every 100 ms, and one will clear every
+  second:
+
+\begin{verbatim}
+"CALL" : "num_2_clearInterval_100,num_1_clearInterval_1000"
+\end{verbatim}
+
+Refer to Table \ref{tab:mkt} for details on market-specific settings.
+
+\begin{table}
+\centering
+\begin{tabular}[f]{p{0.3\textwidth} c p{0.55\textwidth}}
+\uppercase{Market parameter}   & \uppercase{Default} & \uppercase{Description} \\ \hline
+
+\verb|num|			& 0	& Number of a specific market configuration \\
+
+\verb|quoteLatency|			& \verb|mktLatency| & Latency of quote updates \\
+\verb|transLatency|	& \verb|mktLatency| & Latency of transaction updates \\
+
+\verb|marketTickSize|		& \verb|tickSize| & Tick size for a market \\
+
+\verb|clearInterval| 		& 1000 & Length of clearing interval of \verb|CALL| market \\
+\verb|pricingPolicy|			& 0.5 & \verb|CALL| market pricing policy
+
+\end{tabular}
+\caption{List of market configuration parameters.}
+\label{tab:mkt}
+\end{table}
+
+%%%%%%%%%%
+\item[Agents:] The next set of options allow manually specifying agent
+  configurations (NOTE: LA configurations can only be set if a \texttt{preset} is not being used). 
+   Each agent takes a configuration string identical in style to a market, except agents
+  will take different parameters. See Table \ref{tab:ag} for details.
+  
+  The current agents available are \texttt{BASICMM}, \texttt{MAMM}, \texttt{WMAMM}, \texttt{ADAPTIVEMM}, \texttt{FUNDAMENTALMM},
+  \texttt{ZI}, \texttt{ZIR}, \texttt{ZIRP}, \texttt{ZIP}, \texttt{AA}, and \texttt{LA}.
+  
+
+\end{description}
+
+\begin{table}
+\centering
+\begin{tabular}{p{0.26\textwidth} >{\centering\arraybackslash}p{0.15\textwidth} p{0.54\textwidth}}
+\uppercase{Agent parameter}   & \uppercase{Default} & \uppercase{Description} \\ \hline
+
+\verb|num|			& 0	& Number of a specific agent configuration \\
+\verb|withdraw|		& \verb|true|	& If true, withdraws orders upon each reentry \\
+\verb|window|		& 5000	& Length of window to process, for \verb|WindowAgents| \\
+
+
+\\
+\uppercase{LA parameter}   & \uppercase{Default} & \uppercase{Description} \\ \hline
+\verb|alpha|			& 0.001 & Profit threshold of LA \\
+\verb|laLatency|		& -1  & Latency of LA \\
+
+\\
+\uppercase{ZI parameter}   & \uppercase{Default} & \uppercase{Description} \\ \hline
+\verb|Rmin|			& 0	& Bid range minimum \\
+\verb|Rmax|			& 5000	& Bid range maximum \\
+\verb|thresh|		& 0.001 & Profit threshold of \verb|ZIRP| \\
+
+\\
+\uppercase{MM parameter}   & \uppercase{Default} & \uppercase{Description} \\ \hline
+\verb|K|			& 100	& Number of rungs on each side of the ladder \\
+\verb|size|			& 100	& Rung size \\
+\verb|trunc|		& \verb|true| & If true, will truncate the ladder to avoid crossing current quote \\
+\verb|tickOutside|	& \verb|false| & If true, given ladder center prices that match the $\mathit{BID}$ and $\mathit{ASK}$, will modify to be \emph{outside} the quote by 1 tick (that is, lower than the  $\mathit{BID}$, higher than the  $\mathit{ASK}$) \\
+\verb|tickImprove|	& \verb|true| & If true, will modify ladder central if matches the current price quote (on either side) \\
+\verb|initLadderMean| & \verb|meanValue| & Ladder center initialization \\
+\verb|initLadderRange| & 1000 & Ladder spread initialization \\
+
+\verb|spread| & -1 &	 Constant spread for \textsc{FundMM} ladder. If this is nonpositive, MM uses the spread of the most recent price quote for the spread of its ladder. \\
+\verb|N| 	& 5 & Number of historical prices (quotes) to use \\
+\verb|w| 	& 0 & Weight factor $\in [0,1)$ for \textsc{WMAMM}; if 0, linearly weighted, otherwise exponentially weighted. \\
+
+\verb|median| 	& \verb|false|	& If true, \verb|AdaptiveMM| will use median spread-based strategy \\
+\verb|fastLearn|	 & \verb|true| & If true, \verb|AdaptiveMM| will use modification to learn more quickly (for updating G) \\
+\verb|lastPrice| & \verb|true| & If true, \verb|AdaptiveMM| will use the last price, rather than the current price, to evaluate each spread-based strategy's performance \\
+\verb|strats| 	& 500, 1000, 2500, 5000 & Initial spreads for strategies used by \verb|AdaptiveMM|. Delimited in strategy string by hyphen ``\verb|-|'' \\
+
+\end{tabular}
+\caption{Incomplete list of agent configuration parameters. AAAgent and ZIPAgent parameters will eventually be converted into groups, and thus are not included here. Note that all boolean parameters can be specified by ``T/t'' and ``F/f'' in addition to ``true'' and ``false.''}
+\label{tab:ag}
+\end{table}
+
+
+\end{document}

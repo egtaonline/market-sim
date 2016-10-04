@@ -1,0 +1,139 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.2in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{color,soul,hyperref,url}
+\usepackage{graphicx,amstext}
+\usepackage{subfigure}
+\usepackage{amsmath}
+\usepackage{enumerate}
+
+\title{Setup}
+\author{
+  Elaine Wah \\
+  \href{mailto:ewah@umich.edu}{ewah@umich.edu}
+}
+\date{Updated: \today}
+
+\begin{document}
+
+\maketitle
+
+\section{Initial Setup}
+
+Before you get a copy of the code you need to make sure that you have the
+following things installed on your machine. If you have any trouble installing
+them contact me.
+
+\begin{description}
+\item[Open SSH:] To connect to the remote repository. You can verify you have it
+  if \texttt{which ssh} returns something
+\item[Git:] To get a copy of the source code. \texttt{which git}
+\item[Java 6:] We are using Java 6 for a number of reasons. If \texttt{Java
+  -version} says ``1.6'' somewhere then you have Java 1.6 installed, but you may
+  have it even if that says ``1.7'' or ``1.8.''
+\item[Ant:] To compile Java. If you have Java you probably have Apache Ant already.
+\end{description}
+
+\section{Connecting to the repository}
+
+The repository for the HFT simulation system is hosted on \path{hft.eecs.umich.edu}. If you need an account on this machine in order to run simulations, please email \href{mailto:ewah@umich.edu}{Elaine}.
+To access the repository, you will need to generate a public RSA key:
+\begin{enumerate}
+\item Generate a public/private RSA key pair with the following command:
+
+\begin{verbatim}
+ssh-keygen -t rsa -C "<youremailhere>"
+\end{verbatim}
+
+\item Press enter when prompted for the name to save under. Do not change the name from \path{id_RSA.pub}, and do not change the location where it is saved.
+\item Enter a non-empty passphrase when prompted.
+\item Email Elaine the \path{.ssh/id_RSA.pub} file located in your home directory.
+\item After you receive notification that your key has been authorized to connect, proceed to the next step.
+\item Create a directory to hold all of your HFT-related work, and then enter it by running the following (or similar) command:
+\begin{verbatim}
+cd
+mkdir hft_project
+cd hft_project
+\end{verbatim}
+
+\item Clone the git repository to get a copy of the source code
+\begin{verbatim}
+git clone git@hft.eecs.umich.edu:hft.git
+\end{verbatim}
+
+\end{enumerate}
+
+\section{Setting up Eclipse}
+It will be easiest to debug any new code added to the simulation system using an IDE. The following instructions are for Eclipse, but any other IDE for Java will suffice. Note that instructions are based on the Eclipse for Linux, and may differ depending on your OS. For the rest of the instructions we will assume that the source code is in \path{~/hft_project/hft/hft-sim}, which is the path for the HFT simulation system project. If you checked out the code somewhere else, make the necessary changes.
+
+\begin{enumerate}
+\item Download and unzip ``Eclipse for Java Developers'' (\href{http://www.eclipse.org/downloads/}{eclipse.org/downloads})
+\item Start up Eclipse. For your workspace, select the path to
+  the \path{hft} folder cloned from the repository (e.g. \path{~/hft_project/hft}).
+\item Set Eclipse to auto-refresh the workspace
+  \begin{enumerate}
+  \item Select Window from the top bar and go down to Preferences
+  \item Expand ``General'' and then click on ``Workspace''
+  \item Check ``Refresh using native hooks or polling'' and ``Refresh on access''
+  \item Click OK
+  \end{enumerate}
+  
+\item From the File menu, select New >> Project...
+\item Select ``Java Project from Existing Ant Buildfile.''
+\item Browse for the Ant buildfile; select the \path{build.xml} file located in \path{hft-sim}, the simulation system directory
+  (\path{~/hft_project/hft/hft-sim/build.xml}). Leave the project name unchanged and
+  click Finish.
+\item At this point, the project will be imported automatically.
+\item Fix the project build path:
+  \begin{enumerate}
+  \item Right click on the ``hft-sim'' project and select Properties.
+  \item Click Java Build Path in the left panel, then select Libraries (at the
+    top). Remove the JRE\_LIB Library.
+  \item Click ``Add Library'' and add a JRE System Library (make sure you add a Java 6 library!).
+  \item Select Source at the top (next to libraries).
+  \item Click Add Folder and select ``test.''
+  \item Select ``Output folder'' under hft-sim/src and then click edit.
+  \item Select ``Project's default output folder'' and then OK to close the window.
+  \item Click OK and close the window.
+  \end{enumerate}
+
+\item Before getting setup to run the simulator, you need to create a directory in which to run your simulations.  To keep the repository organized, run all of your simulations within the \path{~/hft_project/hft/hft-sim/simulations} directory.
+  \begin{enumerate}
+  \item Create a folder in the \path{hft-sim} folder called \path{simulations}.
+  \item Create a folder within simulations (e.g. \path{simulations/test}).
+  \item Copy \path{docs/simulation_spec.json} into the folder you just created.
+  \end{enumerate}
+
+\item In the Properties window set up Run/Debug configurations:
+  \begin{enumerate}
+  \item Right click on the project again and select Properties.
+  \item Select Run/Debug Settings in the left panel. Add a new launch configuration (Java Application).
+  \item At the top, change the name to ``Run Simulator.'' To select the
+    correct main class, click ``Search...'' and select \texttt{SystemManager}.
+  \item Select the Arguments tab and enter something like the following into the ``Program Arguments'' window:
+
+\begin{verbatim}
+simulations/test 1
+\end{verbatim}
+
+The first argument is the path to the simulation directory that you created above.  This can be any directory as long as it has a
+\path{simulation_spec.json} file in it.
+
+The second argument represents what observation number to use. In this case we're specifying run 1, but it can be any arbitrary number. This number is appended to the name of generated observation files.
+  \end{enumerate}
+  
+\item Save your settings and you should now be able to run the simulator in Eclipse!
+
+\item Test that everything worked:
+  \begin{enumerate}
+  \item Click the down arrow next to the green arrow Run icon and select ``Run
+    Configurations...''
+  \item Select ``Run Simulator'' from the left hand column and click Run.
+  \item Check that there's an observation file called
+    \path{simulations/test/observation1.json}, and a log file in
+    \path{simulations/test/logs}.
+  \end{enumerate}
+
+\end{enumerate}
+
+\end{document}

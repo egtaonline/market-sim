@@ -1,0 +1,76 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.2in]{geometry}
+\usepackage{color,soul,hyperref,url}
+\usepackage{graphicx,amstext}
+\usepackage{subfigure}
+\usepackage{amsmath}
+\usepackage{enumerate}
+\usepackage{listings}
+\usepackage{paralist}
+
+\lstset{
+  basicstyle=\ttfamily,
+  breaklines=true
+}
+
+\begin{document}
+	
+\title{How To}
+\author{
+  Erik Brinkman \\
+  \href{mailto:erik.brinkman@umich.edu}{erik.brinkman@umich.edu}
+  \and
+  Elaine Wah \\
+  \href{mailto:ewah@umich.edu}{ewah@umich.edu}
+}
+\date{Updated: \today}
+\maketitle
+
+\tableofcontents
+
+\section{Add a New Agent}
+
+\begin{enumerate}[1)]
+\item To add a new Agent, first create a class for it in the
+  \texttt{entity.agent} package. A new agent will have to do a few things:
+  \begin{enumerate}[1.]
+  \item Extend an existing Agent class. There is an extensive hierarchy, but the
+    most common extensible Agents are likely BackgroundAgent, MarketMaker,
+    HFTAgent, or a subclass of one of those.
+  \item Create two constructors. One constructor will parse an EntityProperties
+    object to determine what various properties to set. This constructor will
+    then call the other one with the hard coded values. See ZIRAgent for a
+    reference.
+  \item Create a unique strategy for itself. A strategy looks at all available
+    information to the agent, which are usually stored in internal variables or
+    the Agents corresponding InformationProcessors, and then returns a List of
+    Activities to be scheduled. ZIRAgent will serve a reference point. By
+    default, all BackgroundAgents have the ability to act again after a random
+    amount of time. If you wish to have your agent do so, simply add all of
+    \texttt{super.agentStrategy(currentTime))} to your list of activities if you
+    also want your agent to act again according to standard settings.
+  \end{enumerate}
+\item Add a new \texttt{AgentType} to \texttt{systemmanager.Consts}. This will
+  allow people to refer to your agent. This will function as the Agent's name.
+\item Add a new entry in the switch statement inside
+  \texttt{entity.agent.AgentFactory}. Here you should write code that will
+  construct your agent type with the given parameters. The existing fragments
+  inside AgentFactory should be enough to go off of.
+\end{enumerate}
+
+You should now have a functioning agent! In order to add some to the simulation,
+simply add a line in the \path{simulation_spec.json} file with a key that
+matches the name of its \texttt{AgentType}, and a value that contains the
+parameters for your Agent. It may be helpful to read about adding a new
+parameter in Section~\ref{sec:new_param}, or reading about the simulation spec
+file in. % TODO Reference the file
+
+\section{Add a Unit Test}
+
+\section{Add a New Parameter} \label{sec:new_param}
+
+\section{Add a Preset Market Model}
+
+\section{Add a New Statistic}
+
+\end{document}

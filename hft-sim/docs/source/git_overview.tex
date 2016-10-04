@@ -1,0 +1,64 @@
+\documentclass[11pt]{article}
+\usepackage[margin=.9in]{geometry}
+\usepackage{color,soul,hyperref,url}
+\usepackage{graphicx,amstext}
+\usepackage{subfigure}
+\usepackage{amsmath}
+\usepackage{enumerate}
+\usepackage{booktabs}
+
+\begin{document}
+	
+\title{Git Overview}
+\author{
+  Elaine Wah \\
+  \href{mailto:ewah@umich.edu}{ewah@umich.edu}
+}
+\date{Updated: May 2013}
+\maketitle
+
+% ---------------------
+\section{Useful git commands}
+
+\textsc{Remote} refers to the repository. \textsc{Local} refers to a file or branch on your machine. Note that local branches will not be added to the repository unless they are pushed. To work with a remote-tracking branch, you can pull from it to a local branch.
+
+Please do not commit anything other than source code (i.e., do not commit any observation or CSV files generated from simulations). Also, do not leave the commit message empty.\\
+
+\begin{center}
+  \begin{tabular}{ll} \toprule
+    %Description & Command \\  \hline
+    \multicolumn{2}{c}{Branching} \\ \midrule
+    List all (local) branches & \texttt{git branch} \\
+    List all (local + remote) branches & \texttt{git branch -a} \\
+    Check out (switch to) a (local) branch & \texttt{git checkout <my branch>} \\
+    Create/checkout a new (local) branch & \texttt{git checkout -b <new branch name>} \\
+    Create/checkout branch to track remote one & \texttt{git checkout -t origin/<remote branch>} \\
+    Update list of all branches & \texttt{git fetch} \\
+    Merge from local branch to checked-out branch & \texttt{git merge <branch to merge from>} \\
+    \\
+    \toprule
+    \multicolumn{2}{c}{Pulling} \\ \midrule
+    Pull changes from master branch on remote and & \texttt{git pull origin master} \\
+    merge into checked-out branch \\
+    Pull from a branch on the remote & \texttt{git pull origin <remote branch>} \\
+    \\
+    \toprule
+    \multicolumn{2}{c}{Adding/removing/committing} \\ \midrule
+    Check status of checked-out branch & \texttt{git status} \\
+    Add a file or folder to be commited & \texttt{git add <file/folder name>} \\
+    Remove a file & \texttt{git rm <file name>} \\
+    Commit a file to the checked-out branch & \texttt{git commit -m "<commit
+      message>"} \\
+    & (\texttt{git commit} will open an editor) \\
+    Push a branch to the repository & \texttt{git push origin <my branch>} \\
+    \\
+    \toprule
+    \multicolumn{2}{c}{Miscellaneous} \\ \midrule
+    Save working directory without committing & \texttt{git stash} \\
+    (useful when wish to switch branches) \\
+    Continue from where stashed & \texttt{git stash pop} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\end{document}

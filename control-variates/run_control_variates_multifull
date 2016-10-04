@@ -1,0 +1,57 @@
+#!/bin/bash
+if [ $# -lt 4 ]
+then
+echo "Usage: ./$(basename $0) [folder name] [game #] [parse features?] [have coeffs?] [path to coeffs]"
+exit 1
+fi
+
+num=$2
+
+prefix="${1%/}/$num"
+
+#full="$prefix*-full.json"
+features="$prefix-features.json"
+
+path="path=$1"
+summ="summ=$num-summary.json"
+obs="obs=$num-observations.json"
+if $4 ; then
+    #coeff="incoeff=$5"
+    cp $5 "$1/incoeffs.json"
+    coeff="incoeff=incoeffs.json"
+else
+    coeff="outcoeff=$num-coeffs.json"
+fi
+
+feat="feat=$num-features.json"
+diff="diff=$num-diff.json"
+adj="adj=$num-adj-summary.json"
+
+output="$prefix-results.txt"
+
+
+basedir=.
+
+FILES=$basedir/lib/*.jar
+CLASSPATH=.:$basedir/dist/cv.jar
+for i in $FILES
+do
+  CLASSPATH=${CLASSPATH}:${i}
+done
+
+#JSONS=$prefix*-full.json
+#FULLJSON=''
+#for i in $JSONS; do
+#    FULLJSON="${FULLJSON} $i"
+#done
+
+if $3 ; then
+echo ">> Parsing features..."
+java -cp ${CLASSPATH} parser.FeatureParser $features $prefix*-full.json
+
+fi
+
+echo ">> Reducing variance..."
+java -cp ${CLASSPATH} controlvariates.VarianceReduction $path $summ $obs $feat $adj $diff $coeff > $output
+cat $output
+

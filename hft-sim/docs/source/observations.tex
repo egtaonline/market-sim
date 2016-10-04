@@ -1,0 +1,196 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.2in]{geometry}
+\usepackage{color,soul,hyperref,url}
+\usepackage{graphicx,amstext}
+\usepackage{subfigure}
+\usepackage{amsmath}
+\usepackage{enumerate}
+\usepackage{listings}
+\usepackage{paralist}
+
+\lstset{
+  basicstyle=\ttfamily,
+  breaklines=true
+}
+
+
+\title{Observations}
+\author{
+  Elaine Wah\\
+  \href{mailto:ewah@umich.edu}{ewah@umich.edu}
+}
+\date{Updated: \today}
+
+\begin{document}
+	
+\maketitle
+
+% ---------------------
+\section{Introduction}
+
+Observations are created each time a simulation is run.
+The format of the observation files are dictated by the requirements for our EGTAOnline testbed. They are created as JSON files, and there are two types of observation files (one for each use case).
+
+Environment configuration parameters are saved in the observation file as a nested feature ``config'' unless \verb|outputConfig| is set to false in \path{env.properties} (in the \path{config} directory).
+Note that in the \emph{EGTA} use case, \verb|outputConfig| should always be false as nested features cannot be used. However, when running simulations for multiple market models locally and then aggregating into a single csv, outputting the configuration may be helpful for differentiating between different environments.
+%
+Below is the example \path{observation0.json} file found in
+the \path{docs} folder:
+
+\lstinputlisting{../observation0.json}
+
+
+% ---------------------
+\section{Reading an observation file}
+
+Observations are saved in the format \verb|observation#.json|, where \# is the observation number (from 0 to the one less the max number of samples gathered, if multiple simulations are run via the available scripts). Note also that this number is the second input argument to the simulator.
+As such, be sure to save different environment configurations in different directories; otherwise you run the risk of overwriting previous observations.
+
+Depending on the use case (\emph{EGTA} vs. \emph{Market Model}), the observation file will differ. Parsing observation files (and converting to CSV) is currently only supported for the \emph{Market Model} use case.
+
+To format the observation file for easier viewing, use the following command:
+\begin{verbatim}
+./jpath.py < [observation file]
+\end{verbatim}
+
+Descriptions for the various types of features (statistics) are listed in Table~\ref{tab:obs}.
+%
+Note that features must be numeric; $NaN$s are not permitted.
+
+\subsection{EGTA}
+
+In the \emph{EGTA} use case, there is a section in the json file called ``players'' containing the player's role, strategy, payoff (i.e., surplus), and any player-specific features, such as those for control variates. See the following for an example which represents the format that would arise from specifying player-strategy assignments as in the example provided in \path{simulation_spec.pdf}, where there are two background traders and a single market maker employing the \textsc{BasicMM} strategy:
+
+\begin{verbatim}
+"players": [
+    {
+        "payoff": 13354.12,
+        "role": "BACKGROUND",
+        "features": {
+            "control_var": 0.12323
+        },    
+        "strategy": "ZIR:bidRangeMin_0_bidRangeMax_1000"  
+    },
+    {
+        "payoff": 5642.776,
+        "role": "BACKGROUND",
+        "features": {
+            "control_var": 0.56184
+        },    
+        "strategy": "ZIR:bidRangeMin_0_bidRangeMax_5000"  
+    },
+    {
+        "payoff": 1212.089,
+        "role": "MARKETMAKER",
+        "features": {},
+        "strategy": "BASICMM:rungSize_100"
+    }
+],
+\end{verbatim}
+
+The other section in the json file will be ``features'' which will include information on the simulation configuration and aggregate statistics computed at the end of the simulation. This is discussed in depth in the following section.
+
+
+\subsection{Market Model}
+
+In the \emph{Market Model} use case, the ``player'' section will be empty (as there are no players). The features section will be the same as in the EGTA use case.
+
+
+\begin{table}
+\centering
+\begin{tabular}[f]{p{0.5\textwidth} p{0.5\textwidth}}
+\uppercase{Name}  & \uppercase{Description} \\ \hline
+
+\verb|surplus_<agent>_sum_no_disc| & total raw (undiscounted) surplus for agents of the specified type \\
+\verb|surplus_sum_no_disc| & total raw surplus for all agents \\
+\verb|surplus_<agent>_sum_discY| & total surplus (discounted by Y) for agents of the specified type \\
+\verb|surplus_sum_discY|  & total surplus (discounted by Y) for all agents \\
+
+\verb|profit_sum_<role>| & total profit for agents in given role (e.g., background, MM, HFT)\\
+\verb|profit_sum_total| & total profit for all agents \\
+
+\verb|spreads_median_market_#|  & median spread in market \# \\
+\verb|spreads_mean_markets| & average median spread over all markets \\
+\verb|spreads_median_nbbo|  & median spread of NBBO \\
+
+\verb|vol_freq_X_mean_stddev_price|   & average volatility over all markets, measured by standard deviation of midquote prices sampled every X time steps (if \verb|freq_X| not present, metric is computed for all time steps) \\
+\verb|vol_freq_X_mean_log_price|  & average volatility over all markets, measured by log of standard deviation of midquote prices sampled every X \\
+\verb|vol_freq_X_mean_log_return|   & average volatility over all markets, measured by standard deviation of log returns sampled every X \\
+\verb|vol_freq_X_stddev_price_market_#|   & volatility in market \#, measured by log of standard deviation of midquote prices sampled every X \\
+\verb|vol_freq_X_stddev_log_return_market_#|  & volatility in market \#, measured by standard deviation of log returns sampled every X \\
+
+
+\verb|trans_mean_price| & average transaction price \\
+\verb|trans_rmsd|   & root mean square deviation (RMSD) between transaction prices and the value of the fundamental at the time of execution \\
+\verb|trans_freq_X_rmsd|  & RMSD based on prices sampled every X timesteps \\
+\verb|trans_stddev_price| & standard deviation of transaction prices \\
+\verb|trans_num| & total number of transactions \\
+\verb|trans_<agent>_num| & number of transactions by agents of specified type (e.g., ZI, ZIR, LA)\\
+
+\verb|exectime_mean|  & average time between when bid is submitted to when it transacts \\
+
+\end{tabular}
+\caption{List of observation features.}
+\label{tab:obs}
+\end{table}
+
+
+% ---------------------
+\section{Merging observation files}
+
+To merge observation files (from simulation runs performed off the testbed), the data from each individual run will be merged into one JSON file or into a merged directory.
+%
+Merging is different for each use case, as outlined below. For more details, the optional argument \verb|-h| will output the script's help message.
+
+
+\subsection{EGTA}
+To merge, which means finding the mean for each feature across all observations and the mean payoff for each unique role-strategy setting, use the following command:
+\begin{verbatim}
+./merge-obs-egta.py [list of observation files] -o [merged observation file]
+\end{verbatim}
+For example,
+\begin{verbatim}
+./merge-obs-egta.py simulations/test/obs*.json -o simulations/test/merged.json
+\end{verbatim}
+will determine the mean values for all observations within the \verb|~/simulations/test| directory and save these values in the specified output file.
+This merge script will also output the sample standard deviation.
+
+\subsection{Market Model}
+
+In the \emph{Market Model} use case, the following script will merge observation files from multiple directories (assuming comparable environment settings but varying agent populations or market models) into a single output directory.
+The \path{merge-sim-obs.sh} script can also be used for observations generated with \emph{EGTA}-style spec files, although it is not recommended due to the size of the output files---each model's list of players is also merged into each merged observation file.
+%
+To merge, use the following command:
+\begin{verbatim}
+./merge-sim-obs.sh [merged directory] [# of observations] [input directories]
+\end{verbatim}
+For example, 
+\begin{verbatim}
+./merge-sim-obs.sh simulations/merged 100 simulations/{model_1,model_2}
+\end{verbatim}
+will merge the first 100 observations from folders \path{simulations/model_1} and \path{simulations/model_2} into the directory \path{simulations/merged}.
+The resulting output directory \path{simulations/merged} will have 100 observation files, with each one containing the corresponding observation outputs from the input directories.
+
+The model name specified in \path{simulation_spec.json} is used to differentiate between models. In the example above, there will be two entries for each statistic. If the model name is the same as the folder name, the output JSON file will have both \verb|model_1_surplus_sum_no_disc| and \verb|model_2_surplus_sum_no_disc|.
+
+
+
+% ---------------------
+\section{Parsing observation files}
+
+When parsing observation files, the JSON headers are flattened (in the JSON file itself. This aspect is only relevant for configuration parameters, as nested features are no longer permitted in the testbed.
+
+To merge a directory of observations into a CSV, use the following command:
+\begin{verbatim}
+./obs2csv.py [list of observation files] -o [csv-file]
+\end{verbatim}
+For example,
+\begin{verbatim}
+./obs2csv.py simulations/test/obs*.json -o merged.csv
+\end{verbatim}
+will parse all observations in the \path|simulations/test| directory.
+
+Note that this script will only generate column headers if the output CSV does not yet exist; if you are not seeing header files, delete the CSV and re-parse.
+
+
+\end{document}
