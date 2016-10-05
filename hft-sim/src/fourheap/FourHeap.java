@@ -40,7 +40,7 @@ import com.google.common.collect.Ordering;
  * to be a way to generalize it.
  * 
  */
-public class FourHeap <P extends Comparable<? super P>, T extends Comparable<? super T>, O extends Order<? extends P, ? extends T>> implements Serializable {
+public class FourHeap <P extends Comparable<? super P>, T extends Comparable<? super T>, O extends Order<P, T>> implements Serializable {
 
 	private static final long serialVersionUID = -7322375558427133915L;
 	protected final Ordering<P> pord = Ordering.natural();
@@ -65,7 +65,7 @@ public class FourHeap <P extends Comparable<? super P>, T extends Comparable<? s
 	/**
 	 * Factory Method
 	 */
-	public static <P extends Comparable<? super P>, T extends Comparable<? super T>, O extends Order<? extends P, ? extends T>> FourHeap<P, T, O> create() {
+	public static <P extends Comparable<? super P>, T extends Comparable<? super T>, O extends Order<P, T>> FourHeap<P, T, O> create() {
 		return new FourHeap<P, T, O>();
 	}
 
@@ -162,11 +162,12 @@ public class FourHeap <P extends Comparable<? super P>, T extends Comparable<? s
 	 *            The quantity to withdraw from order. Must be positive, even
 	 *            for sell orders.
 	 */
-	public void withdrawOrder(O order, int quantity) {
+	public void withdrawOrder(final O order, final int quantity) {
 		checkArgument(quantity > 0, "Quantity must be positive");
 		checkArgument(quantity <= order.getQuantity(), "Can't withdraw more than in order");
 
-		size -= quantity;
+		int innerQuantity = quantity;
+		size -= innerQuantity;
 		int t;
 		PriorityQueue<O> matchUnmatchedHeap, matchMatchedHeap, orderUnmatchedHeap, orderMatchedHeap;
 		if (order.type == Order.OrderType.BUY) { // buy order
@@ -185,38 +186,38 @@ public class FourHeap <P extends Comparable<? super P>, T extends Comparable<? s
 
 		// First remove any unmatched orders (easy)
 		if (order.unmatchedQuantity != 0) {
-			int qremove = Math.min(quantity, order.unmatchedQuantity);
+			int qremove = Math.min(innerQuantity, order.unmatchedQuantity);
 			order.unmatchedQuantity -= qremove;
-			quantity -= qremove;
+			innerQuantity -= qremove;
 			if (order.unmatchedQuantity == 0) orderUnmatchedHeap.remove(order);
 		}
 		
 		// Replace withdrawn quantity with viable orders from orderUnmatchedHeap
-		while (quantity > 0 // More to remove
+		while (innerQuantity > 0 // More to remove
 				&& !orderUnmatchedHeap.isEmpty() // Orders to replace
 				&& orderUnmatchedHeap.peek().price.compareTo(matchMatchedHeap.peek().price) * t >= 0) { // Valid to match
 			O match = orderUnmatchedHeap.peek();
 			if (match.matchedQuantity == 0) orderMatchedHeap.offer(match);
 			
-			int quantityMatched = Math.min(quantity, match.unmatchedQuantity);
+			int quantityMatched = Math.min(innerQuantity, match.unmatchedQuantity);
 			order.matchedQuantity -= quantityMatched;
 			match.matchedQuantity += quantityMatched;
 			match.unmatchedQuantity -= quantityMatched;
-			quantity -= quantityMatched;
+			innerQuantity -= quantityMatched;
 			
 			if (match.unmatchedQuantity == 0) orderUnmatchedHeap.poll();
 		}
 
 		// Remove any amount of matched orders
-		while (quantity > 0) {
+		while (innerQuantity > 0) {
 			O match = matchMatchedHeap.peek();
 			if (match.unmatchedQuantity == 0) matchUnmatchedHeap.offer(match);
 			
-			int quantityMatched = Math.min(quantity, match.matchedQuantity);
+			int quantityMatched = Math.min(innerQuantity, match.matchedQuantity);
 			order.matchedQuantity -= quantityMatched;
 			match.matchedQuantity -= quantityMatched;
 			match.unmatchedQuantity += quantityMatched;
-			quantity -= quantityMatched;
+			innerQuantity -= quantityMatched;
 			
 			if (match.matchedQuantity == 0) matchMatchedHeap.poll();
 		}

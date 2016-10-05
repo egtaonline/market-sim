@@ -195,7 +195,6 @@ public class ObservationsTest {
 		assertEquals(20, list.get(0), 0.001);
 	}
 	
-	@SuppressWarnings("unused")
     @Test
 	public void numTransTest() {
 		Map<String, Double> features;
