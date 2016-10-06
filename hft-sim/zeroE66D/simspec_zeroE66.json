@@ -1,0 +1,20 @@
+{
+	"configuration": 
+	{
+		"simLength": "1000",
+		"meanValue": "100000",
+		"fundamentalMean": "100000",
+		"fundamentalShockVar": "1E6",
+		"numSims": "10",
+		"fundamentalKappa": "0.05",
+		"privateValueVar": "5E6",
+		"CDA": "num_1",
+		"backgroundReentryRate": "0.0005",
+		"marketmakerReentryRate": "0.005"
+	},
+	"role_counts": 
+	{
+		"background": 66,
+		"marketMaker": 1
+	}
+}

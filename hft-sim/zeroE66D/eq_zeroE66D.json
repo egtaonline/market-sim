@@ -1,0 +1,12 @@
+{
+	"background":
+	{
+		"ZIRP:Rmin_0_Rmax_500_thresh_1": 0.1059,
+		"ZIRP:Rmin_250_Rmax_500_thresh_1": 0.8611,
+		"ZIRP:Rmin_500_Rmax_1000_thresh_.4": 0.0330
+	},
+	"marketMaker":
+	{
+		"NOOP": 1.0
+	}
+}
