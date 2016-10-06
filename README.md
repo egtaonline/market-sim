@@ -99,3 +99,33 @@ simulations/test > Refresh
 
 The result should be located at ```simulations/test/observation1.json```.
 
+## 3. Open a Unix-like terminal, again
+
+Next we can perform local simulations of a role-symmetric mixed-strategy profile. We will use the example stored in ```hft-sim/oneE25A```.
+
+```bash
+bash
+cd msimDir/hft-sim
+```
+
+First, we will generate pure-strategy profiles by sampling from the mixed-strategy profile. Let's generate 10 pure-strategy profiles. (For better accuracy, we would want to generate many more, perhaps 2500.) Note that ```oneE25A/simspec_oneE25.json``` holds parameters of the simulated environment, while ```oneE25A/eq_oneE25A.json``` holds the role-symmetric mixed-strategy profile.
+
+```python
+python sample.py -s oneE25A/simspec_oneE25.json -f oneE25A/eq_oneE25A.json -n 10 -d oneE25A/
+```
+
+Now there should be 10 directories within ```hft-sim/oneE25A``` that hold 1 pure-strategy profile each.
+
+Next we run the simulator on each profile.
+
+```bash
+for f in oneE25A/[0-9]* ; do (./run-hft.sh "$f" 1); done
+```
+
+Now each profile directory should have an ```observation1.json``` output file. We finally aggregate the results of these outputs.
+
+```python
+python bootstrapNewSums.py oneE25A 1
+```
+
+The result gives summary statistics on the payoff for each agent type, and much more.
