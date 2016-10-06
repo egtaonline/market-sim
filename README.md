@@ -129,3 +129,15 @@ python bootstrapNewSums.py oneE25A 1
 ```
 
 The result gives summary statistics on the payoff for each agent type, and much more.
+
+Similarly, we can perform simulation runs of a profile with no MM.
+
+```bash
+python sample.py -s zeroE66D/simspec_zeroE66.json -f zeroE66D/eq_zeroE66D.json -n 10 -d zeroE66D/
+
+for f in zeroE66D/[0-9]* ; do (./run-hft.sh "$f" 1); done
+
+python bootstrapNewNoMM.py zeroE66D
+```
+
+This gives the results of a simulation of 66 background traders and 0 market maker.
