@@ -59,6 +59,9 @@ public class MultiSimulationObservations {
 						po.strategy, po.payoff, po.features));
 			}
 			for (Entry<String, Double> e : obs.getFeatures().entrySet()) {
+				if (Double.isNaN(e.getValue())) {
+					 continue;
+				}
 				SumStats sum = SumStats.create();
 				sum.add(e.getValue());
 				features.put(e.getKey(), sum);
@@ -81,6 +84,9 @@ public class MultiSimulationObservations {
 //				mpo.features.get(Keys.PV_POSITION1_MAX_ABS).add(playerObs.features.get(Keys.PV_POSITION1_MAX_ABS).doubleValue());
 			}
 			for (Entry<String, Double> e : obs.getFeatures().entrySet()) {
+				if (Double.isNaN(e.getValue())) {
+					 continue;
+				}
 			    // needed in case the new feature, "mean_median_spread_not_inf_nan",
 			    // has been added by Observations.java.
 			    if (!features.containsKey(e.getKey())) {
