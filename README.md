@@ -116,6 +116,8 @@ python sample.py -s oneE25A/simspec_oneE25.json -f oneE25A/eq_oneE25A.json -n 10
 
 Now there should be 10 directories within ```hft-sim/oneE25A``` that hold 1 pure-strategy profile each.
 
+If you have not already built ```dist/hft.jar```, you must do this now. In the Eclipse Package Explorer, right-click on ```build.xml```, select Run As > Ant Build. You should get a message that the build was successful. There will now be a jar file called ```dist/hft.jar``` that we can run.
+
 Next we run the simulator on each profile.
 
 ```bash
